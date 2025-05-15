@@ -1,0 +1,53 @@
+services:
+  localstack:
+    image: localstack/snowflake:latest
+    ports:
+      - "127.0.0.1:4566:4566"
+      - "127.0.0.1:4510-4559:4510-4559"
+      - "127.0.0.1:443:443"
+    environment:
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}
+      - DEBUG=1
+      - DOCKER_FLAGS='-e SF_LOG=trace'
+    volumes:
+      - "./volume:/var/lib/localstack"
+      - "/var/run/docker.sock:/var/run/docker.sock"
+
+  polaris:
+    image: localstack/polaris:latest
+    ports:
+      - "8181:8181"
+      - "8182"
+    environment:
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: test
+      AWS_SECRET_ACCESS_KEY: test
+      AWS_ENDPOINT_URL: http://localstack:4566
+      POLARIS_BOOTSTRAP_CREDENTIALS: default-realm,root,s3cr3t
+      polaris.realm-context.realms: default-realm
+      quarkus.otel.sdk.disabled: "true"
+
+    healthcheck:
+      test: ["CMD", "curl", "http://localhost:8182/healthcheck"]
+      interval: 10s
+      timeout: 10s
+      retries: 5
+
+  create-polaris-catalog:
+    image: curlimages/curl
+    depends_on:
+      polaris:
+        condition: service_healthy
+    volumes:
+      - ./create-polaris-catalog.sh:/create-polaris-catalog.sh
+    command: ["/bin/sh", "/create-polaris-catalog.sh"]
+
+  trino:
+    image: trinodb/trino:latest
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./trino-config/catalog:/etc/trino/catalog
+    depends_on:
+      polaris:
+        condition: service_healthy 
