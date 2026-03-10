@@ -19,22 +19,22 @@ This project demonstrates the integration of Apache Polaris with LocalStack for 
 
 ## LocalStack Authentication
 
-LocalStack for Snowflake requires a valid `LOCALSTACK_AUTH_TOKEN` and set it as environment variable.  
-You can obtain a token by signing up at [LocalStack](https://app.localstack.cloud/).
+This sample requires a valid [LocalStack for Snowflake license](https://localstack.cloud/pricing). Your license provides a [`LOCALSTACK_AUTH_TOKEN`](https://docs.localstack.cloud/getting-started/auth-token/) to activate LocalStack.
 
-Export it in your shell before running Docker Compose:
+## Deployment
+
+Start LocalStack and all services with the `LOCALSTACK_AUTH_TOKEN` pre-configured:
 
 ```bash
-export LOCALSTACK_AUTH_TOKEN=your-localstack-auth-token
+localstack auth set-token <your-auth-token>
+make start
 ```
-
-If you are using the open-source version of LocalStack, this variable is not required.
 
 ## Getting Started
 
-1. Start the services:
+1. Run the Polaris catalog setup:
    ```bash
-   docker-compose up -d
+   make run
    ```
 
 2. Wait for all services to be healthy (especially Polaris)
