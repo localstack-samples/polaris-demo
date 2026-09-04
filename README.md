@@ -19,14 +19,14 @@ This project demonstrates the integration of Apache Polaris with LocalStack for 
 
 ## LocalStack Authentication
 
-This sample requires a valid [LocalStack for Snowflake license](https://localstack.cloud/pricing). Your license provides a [`LOCALSTACK_AUTH_TOKEN`](https://docs.localstack.cloud/getting-started/auth-token/) to activate LocalStack.
+This sample requires a valid [LocalStack for Snowflake license](https://localstack.cloud/pricing). Your license provides a [`LOCALSTACK_AUTH_TOKEN`](https://docs.localstack.cloud/aws/getting-started/auth-token/) to activate LocalStack.
 
 ## Deployment
 
 Start LocalStack and all services with the `LOCALSTACK_AUTH_TOKEN` pre-configured:
 
 ```bash
-localstack auth set-token <your-auth-token>
+export LOCALSTACK_AUTH_TOKEN=<your-auth-token>
 make start
 ```
 
@@ -56,10 +56,10 @@ You can create it with:
    aws --endpoint-url=http://localhost:4566 s3api list-objects --bucket test-bucket
    ```
 
-3. Alternative using awslocal (if installed):
+3. Alternative using lstk (if installed):
    ```bash
-   awslocal s3 mb s3://test-bucket
-   awslocal s3api list-objects --bucket test-bucket
+   lstk aws s3 mb s3://test-bucket
+   lstk aws s3api list-objects --bucket test-bucket
    ```
 
 ## Running the SQL Script

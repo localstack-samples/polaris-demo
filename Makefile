@@ -8,7 +8,7 @@ usage:          ## Show this help
 
 check:          ## Check if all required prerequisites are installed
 	@command -v docker > /dev/null 2>&1 || { echo "Docker is not installed. Please install Docker and try again."; exit 1; }
-	@command -v localstack > /dev/null 2>&1 || { echo "LocalStack is not installed. Please install LocalStack and try again."; exit 1; }
+	@command -v lstk > /dev/null 2>&1 || { echo "lstk is not installed. Please install lstk and try again."; exit 1; }
 	@echo "All required prerequisites are available."
 
 start:          ## Start LocalStack and all services via Docker Compose
@@ -18,9 +18,6 @@ start:          ## Start LocalStack and all services via Docker Compose
 stop:           ## Stop all services
 	docker compose down
 
-ready:          ## Wait until LocalStack is ready
-	@echo Waiting on the LocalStack container...
-	@localstack wait -t 30 && echo LocalStack is ready to use! || (echo Gave up waiting on LocalStack, exiting. && exit 1)
 
 logs:           ## Save the LocalStack logs in a separate file
 	@docker compose logs localstack > logs.txt
@@ -28,4 +25,4 @@ logs:           ## Save the LocalStack logs in a separate file
 run:            ## Run the Polaris catalog setup script
 	./create-polaris-catalog.sh
 
-.PHONY: usage check start stop ready logs run
+.PHONY: usage check start stop logs run
