@@ -6,7 +6,7 @@ services:
       - "127.0.0.1:4510-4559:4510-4559"
       - "127.0.0.1:443:443"
     environment:
-      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:?}
+      - LOCALSTACK_AUTH_TOKEN=${LOCALSTACK_AUTH_TOKEN:-}
       - DEBUG=1
       - DOCKER_FLAGS='-e SF_LOG=trace'
     volumes:
