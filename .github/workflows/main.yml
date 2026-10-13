@@ -1,0 +1,50 @@
+name: Test the Polaris demo
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Share an Iceberg table between Snowflake and Trino
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install the Snowflake connector
+        run: pip install snowflake-connector-python
+
+      - name: Start LocalStack for Snowflake, Polaris and Trino
+        env:
+          LOCALSTACK_AUTH_TOKEN: ${{ secrets.LOCALSTACK_AUTH_TOKEN }}
+        run: make start
+
+      - name: Run tests
+        run: make test
+
+      - name: Show container logs
+        if: failure()
+        run: |
+          docker compose ps -a
+          docker compose logs --tail 300
+
+      - name: Stop the services
+        if: always()
+        run: docker compose down

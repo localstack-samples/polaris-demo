@@ -16,6 +16,7 @@ This project demonstrates the integration of Apache Polaris with LocalStack for 
 
 - Docker and Docker Compose
 - AWS CLI (for testing with LocalStack)
+- Python 3 with `snowflake-connector-python`, to run `make test`
 
 ## LocalStack Authentication
 
@@ -32,12 +33,12 @@ make start
 
 ## Getting Started
 
-1. Run the Polaris catalog setup:
+1. Wait for all services to be healthy (especially Polaris). `make start` also runs the `create-polaris-catalog` container, which creates the `polaris` catalog once Polaris is healthy.
+
+2. To run the catalog setup again, use:
    ```bash
    make run
    ```
-
-2. Wait for all services to be healthy (especially Polaris)
 
 
 ### AWS CLI Commands
@@ -100,12 +101,24 @@ This demonstrates that the tables are interoperable between LocalStack Snowflake
 
 ## Testing
 
-1. The Polaris catalog will be automatically created with the test bucket configuration.
+`make test` runs the whole walkthrough against a freshly started stack (`make start`):
 
-2. You can verify the setup by:
-   - Checking Polaris API health: http://localhost:8181/healthcheck
-   - Accessing Trino UI: http://localhost:8080
-   - Listing S3 buckets in LocalStack
+```bash
+pip install snowflake-connector-python
+make test
+```
+
+It checks that:
+- the `polaris` catalog exists
+- `script.sql` runs on LocalStack for Snowflake, and the `SELECT` returns `test` and `foobar`
+- Trino reads the same rows from `iceberg.test_namespace.iceberg_table`
+- the Iceberg data and metadata files are in `s3://test-bucket/test/`
+
+The test creates `test-bucket` if it does not exist. `script.sql` is not idempotent, so run `make stop` and `make start` before running the test again.
+
+You can also check the setup by hand:
+- Accessing the Trino UI: http://localhost:8080
+- Listing S3 buckets in LocalStack
 
 ## Project Structure
 
@@ -113,6 +126,7 @@ This demonstrates that the tables are interoperable between LocalStack Snowflake
 .
 ├── docker-compose.yml
 ├── create-polaris-catalog.sh
+├── test.sh
 ├── trino-config/
 │   └── catalog/
 ├── script.sql
@@ -122,11 +136,11 @@ This demonstrates that the tables are interoperable between LocalStack Snowflake
 ## Troubleshooting
 
 1. If services fail to start:
-   - Check Docker logs: `docker-compose logs`
+   - Check Docker logs: `docker compose logs`
    - Verify environment variables are set correctly
    - Ensure ports are not in use
 
 2. If Polaris catalog creation fails:
-   - Check LocalStack is running: `curl http://localhost:4566/health`
+   - Check LocalStack is running: `curl http://localhost:4566/_localstack/health`
    - Verify S3 bucket exists: `aws --endpoint-url=http://localhost:4566 s3 ls`
-   - Check Polaris logs: `docker-compose logs polaris` 
+   - Check Polaris logs: `docker compose logs polaris` 
