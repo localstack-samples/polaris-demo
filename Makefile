@@ -8,7 +8,7 @@ usage:          ## Show this help
 
 check:          ## Check if all required prerequisites are installed
 	@command -v docker > /dev/null 2>&1 || { echo "Docker is not installed. Please install Docker and try again."; exit 1; }
-	@command -v lstk > /dev/null 2>&1 || { echo "lstk is not installed. Please install lstk and try again."; exit 1; }
+	@command -v aws > /dev/null 2>&1 || { echo "The AWS CLI is not installed. Please install it and try again."; exit 1; }
 	@echo "All required prerequisites are available."
 
 start:          ## Start LocalStack and all services via Docker Compose
@@ -22,7 +22,10 @@ stop:           ## Stop all services
 logs:           ## Save the LocalStack logs in a separate file
 	@docker compose logs localstack > logs.txt
 
-run:            ## Run the Polaris catalog setup script
-	./create-polaris-catalog.sh
+run:            ## Run the Polaris catalog setup again (make start already runs it)
+	docker compose run --rm create-polaris-catalog
 
-.PHONY: usage check start stop logs run
+test:           ## Run script.sql and check Snowflake, Trino and S3 share the Iceberg table
+	./test.sh
+
+.PHONY: usage check start stop logs run test

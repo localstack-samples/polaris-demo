@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/sh
 
 # Wait for Polaris to be ready
 echo "Waiting for Polaris to be ready..."
@@ -9,7 +9,7 @@ echo "Polaris is ready!"
 
 # Get bearer token
 echo "Getting bearer token..."
-if ! output=$(curl -X POST -H "Polaris-Realm: default-realm" "http://polaris:8181/api/catalog/v1/oauth/tokens" \
+if ! output=$(curl -s -X POST -H "Polaris-Realm: default-realm" "http://polaris:8181/api/catalog/v1/oauth/tokens" \
   -d "grant_type=client_credentials" \
   -d "client_id=root" \
   -d "client_secret=s3cr3t" \
@@ -20,7 +20,7 @@ fi
 
 token=$(echo "$output" | awk -F\" '{print $4}')
 
-if [ "$token" == "unauthorized_client" ]; then
+if [ -z "$token" ] || [ "$token" = "unauthorized_client" ]; then
     echo "Failed to get bearer token"
     exit 1
 fi
@@ -28,9 +28,9 @@ fi
 PRINCIPAL_TOKEN=$token
 echo "Bearer token obtained successfully"
 
-# Create catalog
+# Create catalog. A 409 means it already exists, for example when the script runs again.
 echo "Creating Polaris catalog..."
-if ! curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
+status=$(curl -s -o /tmp/create-catalog.json -w '%{http_code}' -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
   http://polaris:8181/api/management/v1/catalogs \
   -d '{
         "catalog": {
@@ -52,19 +52,21 @@ if ! curl -i -X POST -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: app
             "s3.endpoint": "http://localstack:4566"
           }
         }
-      }'; then
-    echo "Failed to create catalog"
-    exit 1
-fi
-echo "Catalog created successfully"
+      }')
+case "$status" in
+  2*) echo "Catalog created successfully" ;;
+  409) echo "Catalog already exists" ;;
+  *) echo "Failed to create catalog (HTTP $status)"; cat /tmp/create-catalog.json; exit 1 ;;
+esac
 
 # Add TABLE_WRITE_DATA to catalog_admin role
 echo "Adding TABLE_WRITE_DATA privilege to catalog_admin role..."
-if ! curl -i -X PUT -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
+status=$(curl -s -o /tmp/grant.json -w '%{http_code}' -X PUT -H "Authorization: Bearer $PRINCIPAL_TOKEN" -H 'Accept: application/json' -H 'Content-Type: application/json' \
   http://polaris:8181/api/management/v1/catalogs/polaris/catalog-roles/catalog_admin/grants \
-  -d '{"type": "catalog", "privilege": "TABLE_WRITE_DATA"}'; then
-    echo "Failed to add TABLE_WRITE_DATA privilege"
-    exit 1
-fi
+  -d '{"type": "catalog", "privilege": "TABLE_WRITE_DATA"}')
+case "$status" in
+  2*) ;;
+  *) echo "Failed to add TABLE_WRITE_DATA privilege (HTTP $status)"; cat /tmp/grant.json; exit 1 ;;
+esac
 echo "TABLE_WRITE_DATA privilege added successfully"
 echo "Polaris catalog setup completed successfully!" 
